@@ -4,8 +4,10 @@
     {
         public byte ChannelCount { get; }
         public uint SampleRate { get; }
-        public uint SamplesPerChannel { get; }
+        public ushort SamplesPerChannel { get; }
         public ushort Size { get; }
+
+        public ushort CalculatedSize => CalculateSize(ChannelCount, SamplesPerChannel);
 
         /// <summary>
         /// An array of channels, which themselves are an array of samples.
@@ -26,6 +28,16 @@
             {
                 ChannelSamples[i] = new short[SamplesPerChannel];
             }
+        }
+
+        public QOAFrame(byte channelCount, uint sampleRate, ushort samplesPerChannel)
+            : this(channelCount, sampleRate, samplesPerChannel, CalculateSize(channelCount, samplesPerChannel)) { }
+
+        public static ushort CalculateSize(byte channelCount, ushort samplesPerChannel)
+        {
+            return (ushort)(QOAConstants.FrameHeaderSize
+                + (QOAConstants.LMSStateBytes * channelCount)
+                + (int)Math.Ceiling(samplesPerChannel / (double)QOAConstants.SamplesPerSlice));
         }
     }
 

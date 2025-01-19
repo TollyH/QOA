@@ -43,6 +43,11 @@ namespace QOA
                     throw new FormatException($"Frame {decodedFrames} has different sample/channel parameters to the containing file");
                 }
 
+                if (frame.Size != frame.CalculatedSize)
+                {
+                    throw new FormatException($"Frame {decodedFrames} has an invalid size");
+                }
+
                 for (int c = 0; c < frame.ChannelCount; c++)
                 {
                     for (int s = 0; s < frame.SamplesPerChannel; s++)
