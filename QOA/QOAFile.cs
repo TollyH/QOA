@@ -2,10 +2,6 @@
 {
     public class QOAFrame
     {
-        public const int SlicesPerFrame = 256;
-        public const int SamplesPerSlice = 20;
-        public const int SamplesPerFrame = SlicesPerFrame * SamplesPerSlice;
-
         public byte ChannelCount { get; }
         public uint SampleRate { get; }
         public uint SamplesPerChannel { get; }
@@ -39,15 +35,13 @@
 
         public short[][] ChannelSamples { get; }
 
-        public byte[] TrailingData { get; }
+        public byte[] TrailingData { get; set; } = Array.Empty<byte>();
 
-        public QOAFile(byte channelCount, uint sampleRate, ushort samplesPerChannel, byte[] trailingData)
+        public QOAFile(byte channelCount, uint sampleRate, uint samplesPerChannel)
         {
             ChannelCount = channelCount;
             SampleRate = sampleRate;
             SamplesPerChannel = samplesPerChannel;
-
-            TrailingData = trailingData;
 
             ChannelSamples = new short[ChannelCount][];
 
