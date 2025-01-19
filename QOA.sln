@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35707.178 d17.12
+VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QOA", "QOA\QOA.csproj", "{048720CA-3423-4B27-AD52-CA3E3437F21E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QOA.Player", "QOA.Player\QOA.Player.csproj", "{044CBADA-F77E-4905-9924-E69D1DBBD6B4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{048720CA-3423-4B27-AD52-CA3E3437F21E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{048720CA-3423-4B27-AD52-CA3E3437F21E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{048720CA-3423-4B27-AD52-CA3E3437F21E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{044CBADA-F77E-4905-9924-E69D1DBBD6B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{044CBADA-F77E-4905-9924-E69D1DBBD6B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{044CBADA-F77E-4905-9924-E69D1DBBD6B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{044CBADA-F77E-4905-9924-E69D1DBBD6B4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
