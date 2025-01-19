@@ -132,7 +132,7 @@ namespace QOA
         /// </summary>
         /// <param name="slice">A single QOA slice packed into a <see cref="UInt64"/>.</param>
         /// <returns>An array of decoded samples.</returns>
-        public static short[] DecodeSlice(ulong slice, IList<short> lmsHistory, IList<short> lmsWeights)
+        public static short[] DecodeSlice(ulong slice, short[] lmsHistory, short[] lmsWeights)
         {
             short[] samples = new short[QOAConstants.SamplesPerSlice];
 

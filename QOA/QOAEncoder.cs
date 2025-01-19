@@ -72,7 +72,7 @@ namespace QOA
         /// </summary>
         /// <param name="samples">An array of no more than <see cref="QOAConstants.SamplesPerSlice"/> samples.</param>
         /// <returns>A single QOA slice packed into a <see cref="UInt64"/>.</returns>
-        public static ulong EncodeSlice(short[] samples, IList<short> lmsHistory, IList<short> lmsWeights)
+        public static ulong EncodeSlice(short[] samples, short[] lmsHistory, short[] lmsWeights)
         {
             return 0;
         }
