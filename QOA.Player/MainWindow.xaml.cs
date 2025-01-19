@@ -54,7 +54,7 @@ namespace QOA.Player
                     case ".qoa":
                         QOAFile decodedFile = QOADecoder.Decode(File.ReadAllBytes(path));
                         byte[] pcmData = AudioFormatConvert.Int16ChannelsToInterleavedPCMBytesLE(decodedFile.ChannelSamples);
-                        File.WriteAllBytes("debug.pcm", pcmData);
+
                         WaveFormat wavFormat = new((int)decodedFile.SampleRate, QOAConstants.BitDepth, decodedFile.ChannelCount);
                         audioSource = new RawSourceWaveStream(pcmData, 0, pcmData.Length, wavFormat);
                         break;
