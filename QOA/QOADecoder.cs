@@ -28,9 +28,12 @@ namespace QOA
             // BinaryPrimitives doesn't have 24-bit methods
             uint sampleRate = (uint)(data[9] << 16) | (uint)(data[10] << 8) | data[11];
 
+            QOAFile file = new(channelCount, sampleRate, samplesPerChannel);
+
             int frameStart = 8;
             int decodedFrames = 0;
-            uint frameCount = (uint)Math.Ceiling(samplesPerChannel / (double)Constants.SamplesPerFrame);
+            long decodedSamples = 0;
+            uint frameCount = (uint)Math.Ceiling(samplesPerChannel / (double)QOAConstants.SamplesPerFrame);
             while (frameStart < data.Length && decodedFrames++ < frameCount)
             {
                 QOAFrame frame = DecodeFrame(data[frameStart..]);
@@ -40,13 +43,20 @@ namespace QOA
                     throw new FormatException($"Frame {decodedFrames} has different sample/channel parameters to the containing file");
                 }
 
+                long sampleStart = decodedSamples / channelCount;
+                for (int c = 0; c < frame.ChannelCount; c++)
+                {
+                    for (int s = 0; s < frame.SamplesPerChannel; s++)
+                    {
+                        file.ChannelSamples[c][s + sampleStart] = frame.ChannelSamples[c][s];
+                    }
+                }
+
+                decodedSamples += frame.SamplesPerChannel;
                 frameStart += frame.Size;
             }
 
-            QOAFile file = new(channelCount, sampleRate, samplesPerChannel)
-            {
-                TrailingData = data[frameStart..].ToArray()
-            };
+            file.TrailingData = data[frameStart..].ToArray();
 
             return file;
         }
@@ -70,15 +80,15 @@ namespace QOA
             short[][] lmsWeights = new short[channelCount][];
             for (int c = 0; c < channelCount; c++)
             {
-                lmsHistory[c] = new short[Constants.LMSStateArraySize];
-                lmsWeights[c] = new short[Constants.LMSStateArraySize];
+                lmsHistory[c] = new short[QOAConstants.LMSStateArraySize];
+                lmsWeights[c] = new short[QOAConstants.LMSStateArraySize];
 
-                for (int i = 0; i < Constants.LMSStateArraySize; i++)
+                for (int i = 0; i < QOAConstants.LMSStateArraySize; i++)
                 {
                     lmsHistory[c][i] = BinaryPrimitives.ReadInt16BigEndian(frameData[dataOffset..]);
                     dataOffset += 2;
                 }
-                for (int i = 0; i < Constants.LMSStateArraySize; i++)
+                for (int i = 0; i < QOAConstants.LMSStateArraySize; i++)
                 {
                     lmsWeights[c][i] = BinaryPrimitives.ReadInt16BigEndian(frameData[dataOffset..]);
                     dataOffset += 2;
@@ -87,7 +97,7 @@ namespace QOA
 
             QOAFrame frame = new(channelCount, sampleRate, samplesPerChannel, size);
 
-            for (int sliceIndex = 0; sliceIndex < Constants.SlicesPerFrame && dataOffset < frameData.Length; sliceIndex++, dataOffset += 8)
+            for (int sliceIndex = 0; sliceIndex < QOAConstants.SlicesPerFrame && dataOffset < frameData.Length; sliceIndex++, dataOffset += 8)
             {
                 int channel = sliceIndex % channelCount;
 
@@ -95,7 +105,7 @@ namespace QOA
                     BinaryPrimitives.ReadUInt64BigEndian(frameData[dataOffset..]),
                     lmsHistory[channel], lmsWeights[channel]);
 
-                int sampleStart = sliceIndex / channelCount * Constants.SamplesPerSlice;
+                int sampleStart = sliceIndex / channelCount * QOAConstants.SamplesPerSlice;
                 for (int s = 0; s < samples.Length && sampleStart + s < samplesPerChannel; s++)
                 {
                     frame.ChannelSamples[channel][sampleStart + s] = samples[s];
@@ -112,20 +122,20 @@ namespace QOA
         /// <returns>An array of decoded samples.</returns>
         public static short[] DecodeSlice(ulong slice, IList<short> lmsHistory, IList<short> lmsWeights)
         {
-            short[] samples = new short[Constants.SamplesPerSlice];
+            short[] samples = new short[QOAConstants.SamplesPerSlice];
 
             ulong sfQuantized = slice >> 60;
-            double scaleFactor = Math.Round(Math.Pow(sfQuantized + 1, Constants.ScaleFactorExponent));
+            double scaleFactor = Math.Round(Math.Pow(sfQuantized + 1, QOAConstants.ScaleFactorExponent));
 
             int shift = 57;
-            for (int sampleIndex = 0; sampleIndex < Constants.SamplesPerSlice; sampleIndex++, shift -= 3)
+            for (int sampleIndex = 0; sampleIndex < QOAConstants.SamplesPerSlice; sampleIndex++, shift -= 3)
             {
                 int residual = (int)Math.Round(
-                    scaleFactor * Constants.DequantizationTab[(slice >> shift) & 0b111],
+                    scaleFactor * QOAConstants.DequantizationTab[(slice >> shift) & 0b111],
                     MidpointRounding.AwayFromZero);
 
                 int predictedSample = 0;
-                for (int i = 0; i < Constants.LMSStateArraySize; i++)
+                for (int i = 0; i < QOAConstants.LMSStateArraySize; i++)
                 {
                     predictedSample += lmsHistory[i] * lmsWeights[i];
                 }
@@ -134,16 +144,16 @@ namespace QOA
                 samples[sampleIndex] = (short)Math.Clamp(predictedSample + residual, short.MinValue, short.MaxValue);
 
                 short delta = (short)Math.Clamp(residual >> 4, short.MinValue, short.MaxValue);
-                for (int i = 0; i < Constants.LMSStateArraySize; i++)
+                for (int i = 0; i < QOAConstants.LMSStateArraySize; i++)
                 {
                     lmsWeights[i] += (short)(lmsHistory[i] < 0 ? -delta : delta);
                 }
 
-                for (int i = 0; i < Constants.LMSStateArraySize - 1; i++)
+                for (int i = 0; i < QOAConstants.LMSStateArraySize - 1; i++)
                 {
                     lmsHistory[i] = lmsHistory[i + 1];
                 }
-                lmsHistory[Constants.LMSStateArraySize - 1] = samples[sampleIndex];
+                lmsHistory[QOAConstants.LMSStateArraySize - 1] = samples[sampleIndex];
             }
 
             return samples;

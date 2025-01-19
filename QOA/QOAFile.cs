@@ -7,6 +7,10 @@
         public uint SamplesPerChannel { get; }
         public ushort Size { get; }
 
+        /// <summary>
+        /// An array of channels, which themselves are an array of samples.
+        /// Indexes as ChannelSamples[channel][sample]
+        /// </summary>
         public short[][] ChannelSamples { get; }
 
         public QOAFrame(byte channelCount, uint sampleRate, ushort samplesPerChannel, ushort size)
@@ -33,6 +37,10 @@
         public uint SampleRate { get; }
         public uint SamplesPerChannel { get; }
 
+        /// <summary>
+        /// An array of channels, which themselves are an array of samples.
+        /// Indexes as ChannelSamples[channel][sample]
+        /// </summary>
         public short[][] ChannelSamples { get; }
 
         public byte[] TrailingData { get; set; } = Array.Empty<byte>();

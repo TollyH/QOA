@@ -1,6 +1,6 @@
 ﻿namespace QOA
 {
-    public static class Constants
+    public static class QOAConstants
     {
         public const int SlicesPerFrame = 256;
         public const int SamplesPerSlice = 20;
