@@ -30,33 +30,32 @@ namespace QOA
 
             QOAFile file = new(channelCount, sampleRate, samplesPerChannel);
 
-            int frameStart = 8;
+            int frameDataIndex = 8;
             int decodedFrames = 0;
             long decodedSamples = 0;
-            uint frameCount = (uint)Math.Ceiling(samplesPerChannel / (double)QOAConstants.SamplesPerFrame);
-            while (frameStart < data.Length && decodedFrames++ < frameCount)
+            uint frameCount = (uint)Math.Ceiling(samplesPerChannel / (double)QOAConstants.SamplesPerFrameChannel);
+            while (frameDataIndex < data.Length && decodedFrames++ < frameCount)
             {
-                QOAFrame frame = DecodeFrame(data[frameStart..]);
+                QOAFrame frame = DecodeFrame(data[frameDataIndex..]);
 
                 if (frame.SampleRate != sampleRate || frame.ChannelCount != channelCount)
                 {
                     throw new FormatException($"Frame {decodedFrames} has different sample/channel parameters to the containing file");
                 }
 
-                long sampleStart = decodedSamples / channelCount;
                 for (int c = 0; c < frame.ChannelCount; c++)
                 {
                     for (int s = 0; s < frame.SamplesPerChannel; s++)
                     {
-                        file.ChannelSamples[c][s + sampleStart] = frame.ChannelSamples[c][s];
+                        file.ChannelSamples[c][decodedSamples + s] = frame.ChannelSamples[c][s];
                     }
                 }
 
                 decodedSamples += frame.SamplesPerChannel;
-                frameStart += frame.Size;
+                frameDataIndex += frame.Size;
             }
 
-            file.TrailingData = data[frameStart..].ToArray();
+            file.TrailingData = data[frameDataIndex..].ToArray();
 
             return file;
         }
@@ -97,7 +96,9 @@ namespace QOA
 
             QOAFrame frame = new(channelCount, sampleRate, samplesPerChannel, size);
 
-            for (int sliceIndex = 0; sliceIndex < QOAConstants.SlicesPerFrame && dataOffset < frameData.Length; sliceIndex++, dataOffset += 8)
+            int totalSlices = QOAConstants.SlicesPerFrameChannel * channelCount;
+            int decodedSamples = 0;
+            for (int sliceIndex = 0; sliceIndex < totalSlices && dataOffset < frameData.Length; sliceIndex++, dataOffset += 8)
             {
                 int channel = sliceIndex % channelCount;
 
@@ -105,10 +106,14 @@ namespace QOA
                     BinaryPrimitives.ReadUInt64BigEndian(frameData[dataOffset..]),
                     lmsHistory[channel], lmsWeights[channel]);
 
-                int sampleStart = sliceIndex / channelCount * QOAConstants.SamplesPerSlice;
-                for (int s = 0; s < samples.Length && sampleStart + s < samplesPerChannel; s++)
+                for (int s = 0; s < samples.Length && decodedSamples + s < samplesPerChannel; s++)
                 {
-                    frame.ChannelSamples[channel][sampleStart + s] = samples[s];
+                    frame.ChannelSamples[channel][decodedSamples + s] = samples[s];
+                }
+
+                if (channel == 0)
+                {
+                    decodedSamples += QOAConstants.SamplesPerSlice;
                 }
             }
 

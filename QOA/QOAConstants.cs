@@ -2,9 +2,11 @@
 {
     public static class QOAConstants
     {
-        public const int SlicesPerFrame = 256;
+        public const int BitDepth = 16;
+
+        public const int SlicesPerFrameChannel = 256;
         public const int SamplesPerSlice = 20;
-        public const int SamplesPerFrame = SlicesPerFrame * SamplesPerSlice;
+        public const int SamplesPerFrameChannel = SlicesPerFrameChannel * SamplesPerSlice;
 
         public const int LMSStateArraySize = 4;
 
