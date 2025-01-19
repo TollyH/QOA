@@ -23,6 +23,12 @@ namespace QOA.Player
             InitializeComponent();
 
             updateTimer.Elapsed += updateTimer_Elapsed;
+
+            string[] args = Environment.GetCommandLineArgs();
+            if (args.Length > 1)
+            {
+                LoadFile(args[1]);
+            }
         }
 
         ~MainWindow()

@@ -37,7 +37,7 @@
         {
             return (ushort)(QOAConstants.FrameHeaderSize
                 + (QOAConstants.LMSStateBytes * channelCount)
-                + (int)Math.Ceiling(samplesPerChannel / (double)QOAConstants.SamplesPerSlice));
+                + ((int)Math.Ceiling(samplesPerChannel / (double)QOAConstants.SamplesPerSlice) * 8 * channelCount));  // Slices are a ulong (i.e. 8 bytes)
         }
     }
 

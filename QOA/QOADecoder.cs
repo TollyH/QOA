@@ -34,7 +34,7 @@ namespace QOA
             int decodedFrames = 0;
             long decodedSamples = 0;
             uint frameCount = (uint)Math.Ceiling(samplesPerChannel / (double)QOAConstants.SamplesPerFrameChannel);
-            while (frameDataIndex < data.Length && decodedFrames++ < frameCount)
+            while (frameDataIndex < data.Length && decodedFrames < frameCount)
             {
                 QOAFrame frame = DecodeFrame(data[frameDataIndex..]);
 
@@ -56,6 +56,7 @@ namespace QOA
                     }
                 }
 
+                decodedFrames++;
                 decodedSamples += frame.SamplesPerChannel;
                 frameDataIndex += frame.Size;
             }
