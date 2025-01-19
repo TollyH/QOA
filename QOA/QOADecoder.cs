@@ -111,8 +111,9 @@ namespace QOA
                     frame.ChannelSamples[channel][decodedSamples + s] = samples[s];
                 }
 
-                if (channel == 0)
+                if (channel == channelCount - 1)
                 {
+                    // Only increment decoded samples once every channel has been filled
                     decodedSamples += QOAConstants.SamplesPerSlice;
                 }
             }
