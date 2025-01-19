@@ -28,7 +28,7 @@ namespace QOA
             // BinaryPrimitives doesn't have 24-bit methods
             uint sampleRate = (uint)(data[9] << 16) | (uint)(data[10] << 8) | data[11];
 
-            int frameStart = 12;
+            int frameStart = 8;
             int decodedFrames = 0;
             uint frameCount = (uint)Math.Ceiling(samplesPerChannel / (double)Constants.SamplesPerFrame);
             while (frameStart < data.Length && decodedFrames++ < frameCount)
@@ -37,7 +37,7 @@ namespace QOA
 
                 if (frame.SampleRate != sampleRate || frame.ChannelCount != channelCount)
                 {
-                    throw new InvalidDataException($"Frame {decodedFrames} has different sample/channel parameters to the containing file");
+                    throw new FormatException($"Frame {decodedFrames} has different sample/channel parameters to the containing file");
                 }
 
                 frameStart += frame.Size;
@@ -64,8 +64,6 @@ namespace QOA
             ushort samplesPerChannel = BinaryPrimitives.ReadUInt16BigEndian(frameData[4..6]);
             ushort size = BinaryPrimitives.ReadUInt16BigEndian(frameData[6..8]);
 
-            int totalSamples = samplesPerChannel * channelCount;
-
             int dataOffset = 8;
 
             short[][] lmsHistory = new short[channelCount][];
@@ -89,7 +87,6 @@ namespace QOA
 
             QOAFrame frame = new(channelCount, sampleRate, samplesPerChannel, size);
 
-            int decodedSlices = 0;
             for (int sliceIndex = 0; sliceIndex < Constants.SlicesPerFrame && dataOffset < frameData.Length; sliceIndex++, dataOffset += 8)
             {
                 int channel = sliceIndex % channelCount;
@@ -98,9 +95,10 @@ namespace QOA
                     BinaryPrimitives.ReadUInt64BigEndian(frameData[dataOffset..]),
                     lmsHistory[channel], lmsWeights[channel]);
 
-                for (int s = 0; s < samples.Length && decodedSlices < totalSamples; s++, decodedSlices++)
+                int sampleStart = sliceIndex / channelCount * Constants.SamplesPerSlice;
+                for (int s = 0; s < samples.Length && sampleStart + s < samplesPerChannel; s++)
                 {
-                    frame.ChannelSamples[channel][s] = samples[s];
+                    frame.ChannelSamples[channel][sampleStart + s] = samples[s];
                 }
             }
 
