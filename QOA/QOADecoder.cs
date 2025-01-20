@@ -139,11 +139,10 @@ namespace QOA
             ulong sfQuantized = slice >> 60;
             double scaleFactor = Math.Round(Math.Pow(sfQuantized + 1, QOAConstants.ScaleFactorExponent));
 
-            int shift = 57;
-            for (int sampleIndex = 0; sampleIndex < QOAConstants.SamplesPerSlice; sampleIndex++, shift -= 3)
+            for (int sampleIndex = 0; sampleIndex < QOAConstants.SamplesPerSlice; sampleIndex++)
             {
                 int residual = (int)Math.Round(
-                    scaleFactor * QOAConstants.DequantizationTab[(slice >> shift) & 0b111],
+                    scaleFactor * QOAConstants.DequantizationTab[(slice >> (sampleIndex * 3)) & 0b111],
                     MidpointRounding.AwayFromZero);
 
                 int predictedSample = 0;

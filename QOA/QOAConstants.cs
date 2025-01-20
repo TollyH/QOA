@@ -17,5 +17,7 @@
         public const double ScaleFactorExponent = 2.75;
 
         public static readonly double[] DequantizationTab = new double[8] { 0.75, -0.75, 2.5, -2.5, 4.5, -4.5, 7, -7 };
+
+        public static readonly short[] LMSInitialWeights = new short[LMSStateArraySize] { 0, 0, -1, 2 };
     }
 }
