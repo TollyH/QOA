@@ -156,7 +156,31 @@ namespace QOA
 
                 for (int sampleIndex = 0; sampleIndex < samples.Length; sampleIndex++)
                 {
+                    short sample = samples[sampleIndex];
 
+                    int predictedSample = QOACommon.PredictSample(lmsHistory, lmsWeights);
+
+                    int trueResidual = sample - predictedSample;
+
+                    uint bestQuantizedResidual = 0;
+                    uint bestQuantizedResidualError = uint.MaxValue;
+                    for (uint quantizedResidual = 0; quantizedResidual < 8; quantizedResidual++)
+                    {
+                        int residual = QOACommon.DequantizeResidual(scaleFactor, quantizedResidual);
+
+                        uint quantizedResidualError = (uint)Math.Abs(trueResidual - residual);
+                        if (quantizedResidualError < bestQuantizedResidualError)
+                        {
+                            bestQuantizedResidual = quantizedResidual;
+                            bestQuantizedResidualError = quantizedResidualError;
+                        }
+                    }
+
+                    QOACommon.UpdateLMSState(trueResidual, sample, lmsHistory, lmsWeights);
+
+                    error += (uint)Math.Abs(sample - bestQuantizedResidual);
+
+                    slice |= bestQuantizedResidual << (sampleIndex * 3);
                 }
 
                 if (error < bestError)

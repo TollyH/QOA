@@ -15,7 +15,8 @@
         </Grid.RowDefinitions>
         <Menu Grid.Row="0" Height="20">
             <MenuItem Header="_File">
-                <MenuItem Header="Open" InputGestureText="Ctrl+O" Click="OpenItem_Click"/>
+                <MenuItem Header="_Open" InputGestureText="Ctrl+O" Click="OpenItem_Click"/>
+                <MenuItem Header="_Save As..." InputGestureText="Ctrl+S" Click="SaveItem_Click"/>
             </MenuItem>
         </Menu>
         <Slider x:Name="timeSlider" Grid.Row="1" VerticalAlignment="Center" Margin="10" ValueChanged="timeSlider_ValueChanged"/>

@@ -141,30 +141,13 @@ namespace QOA
 
             for (int sampleIndex = 0; sampleIndex < QOAConstants.SamplesPerSlice; sampleIndex++)
             {
-                int residual = (int)Math.Round(
-                    scaleFactor * QOAConstants.DequantizationTab[(slice >> (sampleIndex * 3)) & 0b111],
-                    MidpointRounding.AwayFromZero);
+                int residual = QOACommon.DequantizeResidual(scaleFactor, (uint)((slice >> (sampleIndex * 3)) & 0b111));
 
-                int predictedSample = 0;
-                for (int i = 0; i < QOAConstants.LMSStateArraySize; i++)
-                {
-                    predictedSample += lmsHistory[i] * lmsWeights[i];
-                }
-                predictedSample >>= 13;
+                int predictedSample = QOACommon.PredictSample(lmsHistory, lmsWeights);
 
                 samples[sampleIndex] = (short)Math.Clamp(predictedSample + residual, short.MinValue, short.MaxValue);
 
-                short delta = (short)Math.Clamp(residual >> 4, short.MinValue, short.MaxValue);
-                for (int i = 0; i < QOAConstants.LMSStateArraySize; i++)
-                {
-                    lmsWeights[i] += (short)(lmsHistory[i] < 0 ? -delta : delta);
-                }
-
-                for (int i = 0; i < QOAConstants.LMSStateArraySize - 1; i++)
-                {
-                    lmsHistory[i] = lmsHistory[i + 1];
-                }
-                lmsHistory[QOAConstants.LMSStateArraySize - 1] = samples[sampleIndex];
+                QOACommon.UpdateLMSState(residual, samples[sampleIndex], lmsHistory, lmsWeights);
             }
 
             return samples;
