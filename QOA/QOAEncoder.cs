@@ -178,6 +178,12 @@ namespace QOA
 
                     error += (uint)Math.Abs(sample - bestQuantizedResidual);
 
+                    if (error >= bestError)
+                    {
+                        // This scale factor cannot be any better than the current best one - stop attempting it
+                        break;
+                    }
+
                     slice |= bestQuantizedResidual << (sampleIndex * 3);
                 }
 
