@@ -137,11 +137,13 @@ namespace QOA
             short[] samples = new short[QOAConstants.SamplesPerSlice];
 
             ulong sfQuantized = slice >> 60;
-            double scaleFactor = Math.Round(Math.Pow(sfQuantized + 1, QOAConstants.ScaleFactorExponent));
 
             for (int sampleIndex = 0; sampleIndex < QOAConstants.SamplesPerSlice; sampleIndex++)
             {
-                int residual = QOACommon.DequantizeResidual(scaleFactor, (uint)((slice >> (sampleIndex * 3)) & 0b111));
+                short residual = QOAConstants.DequantizationTab[sfQuantized, (slice >> 57) & 0b111];
+                // Last slices are in the lower bits, but we consider the upper bits in the above calculation,
+                // so bring each residual up one by one
+                slice <<= 3;
 
                 int predictedSample = QOACommon.PredictSample(lmsHistory, lmsWeights);
 

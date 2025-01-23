@@ -119,9 +119,9 @@ namespace QOA.Player
 
                         WaveFileReader reader = new(openFile);
 
-                        if (reader.WaveFormat.BitsPerSample != QOAConstants.BitDepth)
+                        if (reader.WaveFormat is not { BitsPerSample: QOAConstants.BitDepth, Encoding: WaveFormatEncoding.Pcm })
                         {
-                            _ = MessageBox.Show("QOA can only encode 16-bit audio files.",
+                            _ = MessageBox.Show("QOA can only encode signed 16-bit integer PCM audio files.",
                                 "File Write Failed", MessageBoxButton.OK, MessageBoxImage.Error);
                             return;
                         }
@@ -197,7 +197,8 @@ namespace QOA.Player
                 AddExtension = true,
                 Filter = "QOA Audio File|*.qoa" +
                     "|WAV Audio File|*.wav" +
-                    "|MP3 Audio File|*.mp3"
+                    "|MP3 Audio File|*.mp3",
+                FileName = Path.GetFileNameWithoutExtension(openFile)
             };
 
             if (!fileDialog.ShowDialog(this) ?? true)

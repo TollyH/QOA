@@ -33,15 +33,5 @@
 
             return predictedSample >> 13;
         }
-
-        /// <summary>
-        /// Convert a quantized residual to the corresponding residual, scaled by the given scale factor.
-        /// </summary>
-        public static int DequantizeResidual(double scaleFactor, uint quantizedResidual)
-        {
-            return (int)Math.Round(
-                scaleFactor * QOAConstants.DequantizationTab[quantizedResidual],
-                MidpointRounding.AwayFromZero);
-        }
     }
 }

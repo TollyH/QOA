@@ -38,11 +38,11 @@ namespace QOA
 
             int dataOffset = 8;
 
-            ulong remainingSamples = totalSamples;
+            ulong remainingSamples = totalSamples / file.ChannelCount;
             ulong encodedSamples = 0;
             for (uint frameIndex = 0; frameIndex < totalFrames; frameIndex++)
             {
-                ushort samplesToEncode = (ushort)Math.Min(remainingSamples / file.ChannelCount, QOAConstants.SamplesPerFrameChannel);
+                ushort samplesToEncode = (ushort)Math.Min(remainingSamples, QOAConstants.SamplesPerFrameChannel);
 
                 QOAFrame frame = new(file.ChannelCount, file.SampleRate, samplesToEncode);
 
@@ -94,7 +94,7 @@ namespace QOA
                 int channelSliceIndex = sliceIndex / frame.ChannelCount;
 
                 int startIndex = channelSliceIndex * QOAConstants.SamplesPerSlice;
-                int endIndex = Math.Min(startIndex + QOAConstants.SamplesPerSlice, frame.SamplesPerChannel - startIndex);
+                int endIndex = Math.Min(startIndex + QOAConstants.SamplesPerSlice, frame.SamplesPerChannel);
 
                 BinaryPrimitives.WriteUInt64BigEndian(frameDataSpan[dataOffset..],
                     EncodeSlice(frame.ChannelSamples[channel].AsSpan()[startIndex..endIndex], lmsHistory[channel], lmsWeights[channel]));
@@ -152,8 +152,6 @@ namespace QOA
 
                 slice |= (ulong)potentialSfQuantized << 60;
 
-                double scaleFactor = Math.Round(Math.Pow(potentialSfQuantized + 1, QOAConstants.ScaleFactorExponent));
-
                 for (int sampleIndex = 0; sampleIndex < samples.Length; sampleIndex++)
                 {
                     short sample = samples[sampleIndex];
@@ -166,7 +164,7 @@ namespace QOA
                     uint bestQuantizedResidualError = uint.MaxValue;
                     for (uint quantizedResidual = 0; quantizedResidual < 8; quantizedResidual++)
                     {
-                        int residual = QOACommon.DequantizeResidual(scaleFactor, quantizedResidual);
+                        short residual = QOAConstants.DequantizationTab[potentialSfQuantized, quantizedResidual];
 
                         uint quantizedResidualError = (uint)Math.Abs(trueResidual - residual);
                         if (quantizedResidualError < bestQuantizedResidualError)
