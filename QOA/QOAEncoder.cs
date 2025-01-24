@@ -86,7 +86,22 @@ namespace QOA
             BinaryPrimitives.WriteUInt16BigEndian(frameDataSpan[4..6], frame.SamplesPerChannel);
             BinaryPrimitives.WriteUInt16BigEndian(frameDataSpan[6..8], frame.Size);
 
-            int dataOffset = 8 + QOAConstants.LMSStateBytes;
+            int dataOffset = QOAConstants.FrameHeaderSize;
+
+            for (int c = 0; c < frame.ChannelCount; c++)
+            {
+                for (int i = 0; i < QOAConstants.LMSStateArraySize; i++)
+                {
+                    BinaryPrimitives.WriteInt16BigEndian(frameDataSpan[dataOffset..], lmsHistory[c][i]);
+                    dataOffset += 2;
+                }
+                for (int i = 0; i < QOAConstants.LMSStateArraySize; i++)
+                {
+                    BinaryPrimitives.WriteInt16BigEndian(frameDataSpan[dataOffset..], lmsWeights[c][i]);
+                    dataOffset += 2;
+                }
+            }
+
             int slicesToEncode = (int)Math.Ceiling(frame.SamplesPerChannel * frame.ChannelCount / (double)QOAConstants.SamplesPerSlice);
             for (int sliceIndex = 0; sliceIndex < slicesToEncode; sliceIndex++)
             {
@@ -100,21 +115,6 @@ namespace QOA
                     EncodeSlice(frame.ChannelSamples[channel].AsSpan()[startIndex..endIndex], lmsHistory[channel], lmsWeights[channel]));
 
                 dataOffset += 8;
-            }
-
-            dataOffset = 8;
-            for (int c = 0; c < frame.ChannelCount; c++)
-            {
-                for (int i = 0; i < QOAConstants.LMSStateArraySize; i++)
-                {
-                    BinaryPrimitives.WriteInt16BigEndian(frameDataSpan[dataOffset..], lmsHistory[c][i]);
-                    dataOffset += 2;
-                }
-                for (int i = 0; i < QOAConstants.LMSStateArraySize; i++)
-                {
-                    BinaryPrimitives.WriteInt16BigEndian(frameDataSpan[dataOffset..], lmsWeights[c][i]);
-                    dataOffset += 2;
-                }
             }
 
             return frameData;
@@ -144,22 +144,19 @@ namespace QOA
             // Try all possible scale factors to find the optimal one for this slice
             for (uint potentialSfQuantized = 0; potentialSfQuantized < 16; potentialSfQuantized++)
             {
-                ulong slice = 0;
+                ulong slice = potentialSfQuantized;
                 uint error = 0;
 
                 initialLmsHistory.CopyTo(lmsHistory, 0);
                 initialLmsWeights.CopyTo(lmsWeights, 0);
 
-                slice |= (ulong)potentialSfQuantized << 60;
-
-                for (int sampleIndex = 0; sampleIndex < samples.Length; sampleIndex++)
+                foreach (short sample in samples)
                 {
-                    short sample = samples[sampleIndex];
-
                     int predictedSample = QOACommon.PredictSample(lmsHistory, lmsWeights);
 
                     int trueResidual = sample - predictedSample;
 
+                    short bestResidual = 0;
                     uint bestQuantizedResidual = 0;
                     uint bestQuantizedResidualError = uint.MaxValue;
                     for (uint quantizedResidual = 0; quantizedResidual < 8; quantizedResidual++)
@@ -169,14 +166,17 @@ namespace QOA
                         uint quantizedResidualError = (uint)Math.Abs(trueResidual - residual);
                         if (quantizedResidualError < bestQuantizedResidualError)
                         {
+                            bestResidual = residual;
                             bestQuantizedResidual = quantizedResidual;
                             bestQuantizedResidualError = quantizedResidualError;
                         }
                     }
 
-                    QOACommon.UpdateLMSState(trueResidual, sample, lmsHistory, lmsWeights);
+                    short encodedSample = (short)Math.Clamp(predictedSample + bestResidual, short.MinValue, short.MaxValue);
 
-                    error += (uint)Math.Abs(sample - bestQuantizedResidual);
+                    QOACommon.UpdateLMSState(bestResidual, encodedSample, lmsHistory, lmsWeights);
+
+                    error += (uint)Math.Abs(sample - encodedSample);
 
                     if (error >= bestError)
                     {
@@ -184,7 +184,9 @@ namespace QOA
                         break;
                     }
 
-                    slice |= bestQuantizedResidual << (sampleIndex * 3);
+                    // Last samples are in the lower bits
+                    slice <<= 3;
+                    slice |= bestQuantizedResidual;
                 }
 
                 if (error < bestError)

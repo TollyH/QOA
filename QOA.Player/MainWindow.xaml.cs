@@ -50,29 +50,37 @@ namespace QOA.Player
             MediaFoundationApi.Shutdown();
         }
 
+        private WaveStream? CreateAudioSource(string path)
+        {
+            switch (Path.GetExtension(path).ToLower())
+            {
+                case ".qoa":
+                    QOAFile decodedFile = QOADecoder.Decode(File.ReadAllBytes(path));
+                    byte[] pcmData = AudioFormatConvert.Int16ChannelsToInterleavedPCMBytesLE(decodedFile.ChannelSamples);
+
+                    WaveFormat wavFormat = new((int)decodedFile.SampleRate, QOAConstants.BitDepth, decodedFile.ChannelCount);
+                    return new RawSourceWaveStream(pcmData, 0, pcmData.Length, wavFormat);
+                case ".wav":
+                case ".mp3":
+                    return new AudioFileReader(path);
+                default:
+                    return null;
+            }
+        }
+
         private void LoadFile(string path)
         {
             audioPlayer.Stop();
 
             try
             {
-                switch (Path.GetExtension(path).ToLower())
-                {
-                    case ".qoa":
-                        QOAFile decodedFile = QOADecoder.Decode(File.ReadAllBytes(path));
-                        byte[] pcmData = AudioFormatConvert.Int16ChannelsToInterleavedPCMBytesLE(decodedFile.ChannelSamples);
+                audioSource = CreateAudioSource(path);
 
-                        WaveFormat wavFormat = new((int)decodedFile.SampleRate, QOAConstants.BitDepth, decodedFile.ChannelCount);
-                        audioSource = new RawSourceWaveStream(pcmData, 0, pcmData.Length, wavFormat);
-                        break;
-                    case ".wav":
-                    case ".mp3":
-                        audioSource = new AudioFileReader(path);
-                        break;
-                    default:
-                        _ = MessageBox.Show("Invalid file type, must be one of: .qoa, .wav, or .mp3",
-                            "Invalid Type", MessageBoxButton.OK, MessageBoxImage.Error);
-                        return;
+                if (audioSource is null)
+                {
+                    _ = MessageBox.Show("Invalid file type, must be one of: .qoa, .wav, or .mp3",
+                        "Invalid Type", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
                 }
 
                 audioPlayer.Init(audioSource);
@@ -141,10 +149,14 @@ namespace QOA.Player
                         File.WriteAllBytes(path, QOAEncoder.Encode(newFile));
                         break;
                     case ".wav":
-                        WaveFileWriter.CreateWaveFile(path, audioSource);
+                        // Create a new audio source instead of using the existing source.
+                        // This prevents the source being used by the player seeking while it's still being listened to.
+                        WaveFileWriter.CreateWaveFile(path, CreateAudioSource(openFile));
                         break;
                     case ".mp3":
-                        MediaFoundationEncoder.EncodeToMp3(audioSource, path, 256000);
+                        // Create a new audio source instead of using the existing source.
+                        // This prevents the source being used by the player seeking while it's still being listened to.
+                        MediaFoundationEncoder.EncodeToMp3(CreateAudioSource(openFile), path, 256000);
                         break;
                     default:
                         _ = MessageBox.Show("Invalid file type, must be one of: .qoa, .wav, or .mp3",
@@ -287,7 +299,11 @@ namespace QOA.Player
 
         private void updateTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
-            Dispatcher.Invoke(UpdateControls);
+            try
+            {
+                Dispatcher.Invoke(UpdateControls);
+            }
+            catch (TaskCanceledException) { }
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)

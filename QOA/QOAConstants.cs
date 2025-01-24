@@ -38,6 +38,6 @@
             { 1536, -1536, 5120, -5120, 9216, -9216, 14336, -14336 }
         };
 
-        public static readonly short[] LMSInitialWeights = new short[LMSStateArraySize] { 0, 0, -1, 2 };
+        public static readonly short[] LMSInitialWeights = new short[LMSStateArraySize] { 0, 0, -1 << 13, 2 << 13 };
     }
 }
