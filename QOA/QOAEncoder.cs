@@ -36,7 +36,7 @@ namespace QOA
                 QOAConstants.LMSInitialWeights.CopyTo(lmsWeights[c], 0);
             }
 
-            int dataOffset = 8;
+            int dataOffset = QOAConstants.HeaderSize;
 
             ulong remainingSamples = totalSamples / file.ChannelCount;
             ulong encodedSamples = 0;
