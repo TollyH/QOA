@@ -50,24 +50,6 @@ namespace QOA.Player
             MediaFoundationApi.Shutdown();
         }
 
-        private WaveStream? CreateAudioSource(string path)
-        {
-            switch (Path.GetExtension(path).ToLower())
-            {
-                case ".qoa":
-                    QOAFile decodedFile = QOADecoder.Decode(File.ReadAllBytes(path));
-                    byte[] pcmData = AudioFormatConvert.Int16ChannelsToInterleavedPCMBytesLE(decodedFile.ChannelSamples);
-
-                    WaveFormat wavFormat = new((int)decodedFile.SampleRate, QOAConstants.BitDepth, decodedFile.ChannelCount);
-                    return new RawSourceWaveStream(pcmData, 0, pcmData.Length, wavFormat);
-                case ".wav":
-                case ".mp3":
-                    return new AudioFileReader(path);
-                default:
-                    return null;
-            }
-        }
-
         private void LoadFile(string path)
         {
             audioPlayer.Stop();
@@ -257,6 +239,24 @@ namespace QOA.Player
             timeSlider.Maximum = audioSource?.TotalTime.TotalSeconds ?? 1;
 
             updatingControls = false;
+        }
+
+        private static WaveStream? CreateAudioSource(string path)
+        {
+            switch (Path.GetExtension(path).ToLower())
+            {
+                case ".qoa":
+                    QOAFile decodedFile = QOADecoder.Decode(File.ReadAllBytes(path));
+                    byte[] pcmData = AudioFormatConvert.Int16ChannelsToInterleavedPCMBytesLE(decodedFile.ChannelSamples);
+
+                    WaveFormat wavFormat = new((int)decodedFile.SampleRate, QOAConstants.BitDepth, decodedFile.ChannelCount);
+                    return new RawSourceWaveStream(pcmData, 0, pcmData.Length, wavFormat);
+                case ".wav":
+                case ".mp3":
+                    return new AudioFileReader(path);
+                default:
+                    return null;
+            }
         }
 
         private void OpenItem_Click(object sender, RoutedEventArgs e)
